@@ -6,7 +6,10 @@ import {
   Button,
   Card,
   CardContent,
-  Chip,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
   Divider,
   IconButton,
   LinearProgress,
@@ -18,6 +21,7 @@ import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import CancelIcon from "@mui/icons-material/Cancel";
 import BookmarkBorderIcon from "@mui/icons-material/BookmarkBorder";
 import BookmarkIcon from "@mui/icons-material/Bookmark";
+import DeleteOutlineIcon from "@mui/icons-material/DeleteOutlined";
 import StarIcon from "@mui/icons-material/Star";
 import questions from "@/data/questions.json";
 
@@ -31,7 +35,7 @@ type Question = {
 
 const ALL = questions as Question[];
 
-type Screen = "landing" | "quiz" | "results";
+type Screen = "landing" | "quiz" | "results" | "bookmarks";
 type BookmarkLevel = 0 | 1 | 2;
 type BookmarkMap = Record<number, BookmarkLevel>;
 
@@ -53,6 +57,9 @@ function sampleN(pool: number[], n: number) {
 }
 
 const LS_KEY = "keigo-bookmarks";
+const LS_ORDER_KEY = "keigo-bookmark-order";
+
+type BookmarkOrderMap = Record<number, number>;
 
 function loadBookmarks(): BookmarkMap {
   if (typeof window === "undefined") return {};
@@ -65,6 +72,19 @@ function loadBookmarks(): BookmarkMap {
 
 function saveBookmarks(m: BookmarkMap) {
   localStorage.setItem(LS_KEY, JSON.stringify(m));
+}
+
+function loadBookmarkOrder(): BookmarkOrderMap {
+  if (typeof window === "undefined") return {};
+  try {
+    return JSON.parse(localStorage.getItem(LS_ORDER_KEY) ?? "{}");
+  } catch {
+    return {};
+  }
+}
+
+function saveBookmarkOrder(m: BookmarkOrderMap) {
+  localStorage.setItem(LS_ORDER_KEY, JSON.stringify(m));
 }
 
 // ── Shared styles ─────────────────────────────────────────────────────────────
@@ -129,10 +149,11 @@ const BM_HINT: Record<BookmarkLevel, string> = {
   2: "★★ Level 2 · click to remove",
 };
 
-function BmBtn({ level, onToggle }: { level: BookmarkLevel; onToggle: () => void }) {
+function BmBtn({ level, onToggle, listMode = false }: { level: BookmarkLevel; onToggle: () => void; listMode?: boolean }) {
   const Icon = level === 0 ? BookmarkBorderIcon : level === 1 ? BookmarkIcon : StarIcon;
+  const hint = listMode && level === 2 ? "★★ Level 2 · click for level 1" : BM_HINT[level];
   return (
-    <Tooltip title={BM_HINT[level]}>
+    <Tooltip title={hint}>
       <IconButton size="small" onClick={onToggle} sx={{ color: BM_COLOR[level] }}>
         <Icon fontSize="small" />
       </IconButton>
@@ -144,20 +165,17 @@ function BmBtn({ level, onToggle }: { level: BookmarkLevel; onToggle: () => void
 
 function LandingScreen({
   bookmarks,
-  onToggleBookmark,
   onStart,
+  onViewBookmarks,
 }: {
   bookmarks: BookmarkMap;
-  onToggleBookmark: (idx: number) => void;
   onStart: (idxs: number[]) => void;
+  onViewBookmarks: () => void;
 }) {
-  const [showList, setShowList] = useState(false);
-
   const allPool = ALL.map((_, i) => i);
   const bmIdxs = Object.keys(bookmarks)
     .map(Number)
-    .filter((i) => (bookmarks[i] ?? 0) > 0)
-    .sort((a, b) => (bookmarks[b] ?? 0) - (bookmarks[a] ?? 0));
+    .filter((i) => (bookmarks[i] ?? 0) > 0);
 
   const lv1Count = bmIdxs.filter((i) => bookmarks[i] === 1).length;
   const lv2Count = bmIdxs.filter((i) => bookmarks[i] === 2).length;
@@ -239,51 +257,169 @@ function LandingScreen({
               <Divider sx={{ my: 2, borderColor: "var(--border)" }} />
               <Button
                 size="small"
-                onClick={() => setShowList((v) => !v)}
-                sx={{ color: "var(--text-muted)", textTransform: "none", p: 0 }}
+                onClick={onViewBookmarks}
+                sx={{ color: "var(--accent)", textTransform: "none", p: 0, fontWeight: 600 }}
               >
-                {showList ? "Hide ▲" : `Show ${bmIdxs.length} bookmarks ▼`}
+                View bookmark list →
               </Button>
-              {showList && (
-                <Box className="flex flex-col gap-2 mt-2">
-                  {bmIdxs.map((idx) => {
-                    const lv = (bookmarks[idx] ?? 0) as BookmarkLevel;
-                    const q = ALL[idx];
-                    return (
-                      <Box
-                        key={idx}
-                        className="flex items-center gap-2 rounded-lg px-3 py-2"
-                        sx={{ background: "var(--surface)", border: "1px solid var(--border)" }}
-                      >
-                        <BmBtn level={lv} onToggle={() => onToggleBookmark(idx)} />
-                        <Box className="flex-1 min-w-0">
-                          <Typography
-                            sx={{ color: "var(--foreground)", fontSize: "0.9rem", fontWeight: 500 }}
-                          >
-                            {q.futsugo}
-                          </Typography>
-                          <Typography sx={{ color: "var(--text-muted)", fontSize: "0.78rem" }}>
-                            {q.zh}
-                          </Typography>
-                        </Box>
-                        <Chip
-                          size="small"
-                          label={lv === 2 ? "★★" : "★"}
-                          sx={{
-                            background: lv === 2 ? "#fdebd0" : "var(--accent-soft)",
-                            color: lv === 2 ? "#e67e22" : "var(--accent)",
-                            fontWeight: 700,
-                          }}
-                        />
-                      </Box>
-                    );
-                  })}
-                </Box>
-              )}
             </>
           )}
         </CardContent>
       </Card>
+    </Box>
+  );
+}
+
+// ── BookmarkListScreen ────────────────────────────────────────────────────────
+
+const PAGE_SIZE = 10;
+
+function BookmarkListScreen({
+  bookmarks,
+  bookmarkOrder,
+  onToggleBookmark,
+  onDeleteBookmark,
+  onBack,
+}: {
+  bookmarks: BookmarkMap;
+  bookmarkOrder: BookmarkOrderMap;
+  onToggleBookmark: (idx: number) => void;
+  onDeleteBookmark: (idx: number) => void;
+  onBack: () => void;
+}) {
+  const [page, setPage] = useState(0);
+  const [deleteIdx, setDeleteIdx] = useState<number | null>(null);
+
+  const bmIdxs = Object.keys(bookmarks)
+    .map(Number)
+    .filter((i) => (bookmarks[i] ?? 0) > 0)
+    .sort((a, b) => (bookmarkOrder[a] ?? 0) - (bookmarkOrder[b] ?? 0));
+
+  const totalPages = Math.max(1, Math.ceil(bmIdxs.length / PAGE_SIZE));
+  const safePage = Math.min(page, totalPages - 1);
+  const pageItems = bmIdxs.slice(safePage * PAGE_SIZE, (safePage + 1) * PAGE_SIZE);
+
+  return (
+    <Box className="min-h-screen flex flex-col items-center p-4 pt-10">
+      <Box className="w-full mb-6" sx={{ maxWidth: 600 }}>
+        <Button
+          size="small"
+          onClick={onBack}
+          sx={{ color: "var(--text-muted)", textTransform: "none", mb: 2, p: 0 }}
+        >
+          ← Back
+        </Button>
+        <Box className="flex items-baseline justify-between">
+          <Typography variant="h5" sx={{ color: "var(--accent)", fontWeight: 700 }}>
+            Bookmarks
+          </Typography>
+          <Typography variant="body2" sx={{ color: "var(--text-muted)" }}>
+            {bmIdxs.length} total
+          </Typography>
+        </Box>
+      </Box>
+
+      {bmIdxs.length === 0 ? (
+        <Typography sx={{ color: "var(--text-muted)", fontStyle: "italic" }}>
+          No bookmarks yet.
+        </Typography>
+      ) : (
+        <>
+          <Box sx={{ width: "100%", maxWidth: 600 }} className="flex flex-col gap-3">
+            {pageItems.map((idx) => {
+              const lv = (bookmarks[idx] ?? 0) as BookmarkLevel;
+              const q = ALL[idx];
+              return (
+                <Card key={idx} sx={cardBase}>
+                  <CardContent sx={{ p: 3 }}>
+                    <Box className="flex items-start justify-between gap-2">
+                      <Box className="flex-1 min-w-0">
+                        <Typography sx={{ color: "var(--foreground)", fontWeight: 600, fontSize: "1rem" }}>
+                          {q.futsugo}
+                        </Typography>
+                        <Typography variant="body2" sx={{ color: "var(--text-muted)", mb: 1.5 }}>
+                          {q.zh}
+                        </Typography>
+                        <Divider sx={{ borderColor: "var(--border)", mb: 1.5 }} />
+                        <Box
+                          className="rounded-lg px-3 py-2"
+                          sx={{ background: "var(--accent-soft)", border: "1px solid var(--border)" }}
+                        >
+                          <Typography sx={{ color: "var(--foreground)", fontSize: "0.95rem", fontWeight: 500 }}>
+                            {q.keigo[0]}
+                          </Typography>
+                          {q.keigo[1] && q.keigo[1] !== q.keigo[0] && (
+                            <Typography sx={{ color: "var(--text-muted)", fontSize: "0.8rem", mt: 0.5 }}>
+                              {q.keigo[1]}
+                            </Typography>
+                          )}
+                        </Box>
+                      </Box>
+                      <Box className="flex items-center">
+                        <BmBtn level={lv} onToggle={() => onToggleBookmark(idx)} listMode />
+                        <Tooltip title="Remove bookmark">
+                          <IconButton
+                            size="small"
+                            onClick={() => setDeleteIdx(idx)}
+                            sx={{ color: "var(--text-muted)" }}
+                          >
+                            <DeleteOutlineIcon fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
+                      </Box>
+                    </Box>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </Box>
+
+          {/* Pagination */}
+          <Box className="flex items-center gap-3 mt-6 mb-12">
+            <Button
+              variant="outlined"
+              size="small"
+              disabled={safePage === 0}
+              onClick={() => setPage((p) => p - 1)}
+              sx={{ ...outlineBtn, py: 0.5, minWidth: 80 }}
+            >
+              ← Prev
+            </Button>
+            <Typography variant="body2" sx={{ color: "var(--text-muted)" }}>
+              {safePage + 1} / {totalPages}
+            </Typography>
+            <Button
+              variant="outlined"
+              size="small"
+              disabled={safePage >= totalPages - 1}
+              onClick={() => setPage((p) => p + 1)}
+              sx={{ ...outlineBtn, py: 0.5, minWidth: 80 }}
+            >
+              Next →
+            </Button>
+          </Box>
+        </>
+      )}
+
+      <Dialog open={deleteIdx !== null} onClose={() => setDeleteIdx(null)}>
+        <DialogTitle sx={{ color: "var(--foreground)" }}>Remove Bookmark</DialogTitle>
+        <DialogContent>
+          <Typography sx={{ color: "var(--text-muted)" }}>
+            Remove this bookmark?
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDeleteIdx(null)} sx={{ color: "var(--text-muted)", textTransform: "none" }}>
+            Cancel
+          </Button>
+          <Button
+            onClick={() => { onDeleteBookmark(deleteIdx!); setDeleteIdx(null); }}
+            sx={{ color: "var(--error, #e74c3c)", textTransform: "none", fontWeight: 600 }}
+          >
+            Remove
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }
@@ -295,11 +431,13 @@ function QuizScreen({
   bookmarks,
   onToggleBookmark,
   onFinish,
+  onQuit,
 }: {
   indices: number[];
   bookmarks: BookmarkMap;
   onToggleBookmark: (idx: number) => void;
   onFinish: (records: QuizRecord[]) => void;
+  onQuit: () => void;
 }) {
   const [cursor, setCursor] = useState(0);
   const [input, setInput] = useState("");
@@ -343,7 +481,21 @@ function QuizScreen({
 
   return (
     <Box className="min-h-screen flex flex-col items-center justify-center p-4">
-      <Box className="mb-8 text-center">
+      <Box className="mb-8 text-center" sx={{ position: "relative" }}>
+        <Button
+          size="small"
+          onClick={onQuit}
+          sx={{
+            position: "absolute",
+            right: 0,
+            top: 0,
+            color: "var(--text-muted)",
+            textTransform: "none",
+            fontSize: "0.85rem",
+          }}
+        >
+          Quit ✕
+        </Button>
         <Typography variant="h4" sx={{ color: "var(--accent)", letterSpacing: 2, fontWeight: 700 }}>
           敬語練習
         </Typography>
@@ -629,15 +781,54 @@ export default function KeigoQuiz() {
   const [indices, setIndices] = useState<number[]>([]);
   const [records, setRecords] = useState<QuizRecord[]>([]);
   const [bookmarks, setBookmarks] = useState<BookmarkMap>(() => loadBookmarks());
+  const [bookmarkOrder, setBookmarkOrder] = useState<BookmarkOrderMap>(() => loadBookmarkOrder());
 
   const toggleBookmark = useCallback((idx: number) => {
+    const lv = (bookmarks[idx] ?? 0) as BookmarkLevel;
+    const next = ((lv + 1) % 3) as BookmarkLevel;
+    if (lv === 0) {
+      setBookmarkOrder((prev) => {
+        const updated = { ...prev, [idx]: Date.now() };
+        saveBookmarkOrder(updated);
+        return updated;
+      });
+    } else if (next === 0) {
+      setBookmarkOrder((prev) => {
+        const updated = { ...prev };
+        delete updated[idx];
+        saveBookmarkOrder(updated);
+        return updated;
+      });
+    }
     setBookmarks((prev) => {
-      const lv = (prev[idx] ?? 0) as BookmarkLevel;
-      const next = ((lv + 1) % 3) as BookmarkLevel;
       const updated = { ...prev };
       if (next === 0) delete updated[idx];
       else updated[idx] = next;
       saveBookmarks(updated);
+      return updated;
+    });
+  }, [bookmarks]);
+
+  const toggleBookmarkLevel = useCallback((idx: number) => {
+    setBookmarks((prev) => {
+      const lv = (prev[idx] ?? 1) as BookmarkLevel;
+      const updated = { ...prev, [idx]: lv === 1 ? 2 : 1 };
+      saveBookmarks(updated);
+      return updated;
+    });
+  }, []);
+
+  const deleteBookmark = useCallback((idx: number) => {
+    setBookmarks((prev) => {
+      const updated = { ...prev };
+      delete updated[idx];
+      saveBookmarks(updated);
+      return updated;
+    });
+    setBookmarkOrder((prev) => {
+      const updated = { ...prev };
+      delete updated[idx];
+      saveBookmarkOrder(updated);
       return updated;
     });
   }, []);
@@ -646,12 +837,24 @@ export default function KeigoQuiz() {
     return (
       <LandingScreen
         bookmarks={bookmarks}
-        onToggleBookmark={toggleBookmark}
         onStart={(idxs) => {
           setIndices(idxs);
           setRecords([]);
           setScreen("quiz");
         }}
+        onViewBookmarks={() => setScreen("bookmarks")}
+      />
+    );
+  }
+
+  if (screen === "bookmarks") {
+    return (
+      <BookmarkListScreen
+        bookmarks={bookmarks}
+        bookmarkOrder={bookmarkOrder}
+        onToggleBookmark={toggleBookmarkLevel}
+        onDeleteBookmark={deleteBookmark}
+        onBack={() => setScreen("landing")}
       />
     );
   }
@@ -666,6 +869,7 @@ export default function KeigoQuiz() {
           setRecords(recs);
           setScreen("results");
         }}
+        onQuit={() => setScreen("landing")}
       />
     );
   }
