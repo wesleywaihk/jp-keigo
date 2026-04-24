@@ -812,7 +812,7 @@ export default function KeigoQuiz() {
   const toggleBookmarkLevel = useCallback((idx: number) => {
     setBookmarks((prev) => {
       const lv = (prev[idx] ?? 1) as BookmarkLevel;
-      const updated = { ...prev, [idx]: lv === 1 ? 2 : 1 };
+      const updated = { ...prev, [idx]: (lv === 1 ? 2 : 1) as BookmarkLevel };
       saveBookmarks(updated);
       return updated;
     });
