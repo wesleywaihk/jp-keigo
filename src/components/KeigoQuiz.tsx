@@ -226,13 +226,13 @@ function LandingScreen({
               <Box className="flex items-center gap-3 mt-1">
                 <Box className="flex items-center gap-1">
                   <BookmarkIcon sx={{ color: "var(--accent)", fontSize: 16 }} />
-                  <Typography variant="body2" sx={{ color: "var(--text-muted)" }}>
+                  <Typography variant="body2" sx={{ color: "var(--text-muted)" }} suppressHydrationWarning>
                     {lv1Count}
                   </Typography>
                 </Box>
                 <Box className="flex items-center gap-1">
                   <StarIcon sx={{ color: "#e67e22", fontSize: 16 }} />
-                  <Typography variant="body2" sx={{ color: "var(--text-muted)" }}>
+                  <Typography variant="body2" sx={{ color: "var(--text-muted)" }} suppressHydrationWarning>
                     {lv2Count}
                   </Typography>
                 </Box>
