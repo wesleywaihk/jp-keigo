@@ -341,18 +341,27 @@ function BookmarkListScreen({
                           {q.zh}
                         </Typography>
                         <Divider sx={{ borderColor: "var(--border)", mb: 1.5 }} />
-                        <Box
-                          className="rounded-lg px-3 py-2"
-                          sx={{ background: "var(--accent-soft)", border: "1px solid var(--border)" }}
-                        >
-                          <Typography sx={{ color: "var(--foreground)", fontSize: "0.95rem", fontWeight: 500 }}>
-                            {q.keigo[0]}
-                          </Typography>
-                          {q.keigo[1] && q.keigo[1] !== q.keigo[0] && (
-                            <Typography sx={{ color: "var(--text-muted)", fontSize: "0.8rem", mt: 0.5 }}>
-                              {q.keigo[1]}
-                            </Typography>
-                          )}
+                        <Box className="flex flex-col gap-2">
+                          {Array.from({ length: Math.ceil(q.keigo.length / 2) }, (_, i) => {
+                            const answer = q.keigo[i * 2];
+                            const reading = q.keigo[i * 2 + 1];
+                            return (
+                              <Box
+                                key={i}
+                                className="rounded-lg px-3 py-2"
+                                sx={{ background: "var(--accent-soft)", border: "1px solid var(--border)" }}
+                              >
+                                <Typography sx={{ color: "var(--foreground)", fontSize: "0.95rem", fontWeight: 500 }}>
+                                  {answer}
+                                </Typography>
+                                {reading && reading !== answer && (
+                                  <Typography sx={{ color: "var(--text-muted)", fontSize: "0.8rem", mt: 0.5 }}>
+                                    {reading}
+                                  </Typography>
+                                )}
+                              </Box>
+                            );
+                          })}
                         </Box>
                       </Box>
                       <Box className="flex items-center">
