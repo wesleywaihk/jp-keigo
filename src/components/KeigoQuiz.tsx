@@ -20,6 +20,10 @@ type Question = {
   keigo: string[];
 };
 
+function normalize(s: string): string {
+  return s.replace(/[\s　、。！？・]/g, "");
+}
+
 function pickRandom(list: Question[], exclude?: Question): Question {
   const pool = list.length > 1 ? list.filter((q) => q !== exclude) : list;
   return pool[Math.floor(Math.random() * pool.length)];
@@ -37,8 +41,8 @@ export default function KeigoQuiz() {
 
   const handleSubmit = useCallback(() => {
     if (!input.trim() || result !== null) return;
-    const trimmed = input.trim();
-    const correct = current.keigo.some((k) => k === trimmed);
+    const trimmed = normalize(input.trim());
+    const correct = current.keigo.some((k) => normalize(k) === trimmed);
     setResult(correct ? "correct" : "incorrect");
     if (correct) setStreak((s) => s + 1);
     else setStreak(0);
