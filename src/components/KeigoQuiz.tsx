@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useCallback, useRef } from "react";
+import Link from "next/link";
 import {
   Box,
   Button,
@@ -30,7 +31,7 @@ import questions from "@/data/questions.json";
 type Question = {
   futsugo: string;
   zh: string;
-  keigo: string[];
+  keigo: { written: string; read: string }[];
 };
 
 const ALL = questions as Question[];
@@ -53,7 +54,9 @@ function normalize(s: string) {
 }
 
 function sampleN(pool: number[], n: number) {
-  return [...pool].sort(() => Math.random() - 0.5).slice(0, Math.min(n, pool.length));
+  return [...pool]
+    .sort(() => Math.random() - 0.5)
+    .slice(0, Math.min(n, pool.length));
 }
 
 const LS_KEY = "keigo-bookmarks";
@@ -113,8 +116,14 @@ const primaryBtn = {
 const outlineBtn = {
   borderColor: "var(--accent)",
   color: "var(--accent)",
-  "&:hover": { background: "var(--accent-soft)", borderColor: "var(--accent-hover)" },
-  "&.Mui-disabled": { borderColor: "var(--border)", color: "var(--text-muted)" },
+  "&:hover": {
+    background: "var(--accent-soft)",
+    borderColor: "var(--accent-hover)",
+  },
+  "&.Mui-disabled": {
+    borderColor: "var(--border)",
+    color: "var(--text-muted)",
+  },
   borderRadius: 2,
   py: 1.5,
   fontWeight: 600,
@@ -133,7 +142,10 @@ const inputSx = {
     "&.Mui-focused fieldset": { borderColor: "var(--accent)" },
     "&.Mui-disabled": { opacity: 0.55 },
   },
-  "& .MuiInputBase-input::placeholder": { color: "var(--text-muted)", opacity: 1 },
+  "& .MuiInputBase-input::placeholder": {
+    color: "var(--text-muted)",
+    opacity: 1,
+  },
 };
 
 // ── BookmarkBtn ───────────────────────────────────────────────────────────────
@@ -149,12 +161,26 @@ const BM_HINT: Record<BookmarkLevel, string> = {
   2: "★★ Level 2 · click to remove",
 };
 
-function BmBtn({ level, onToggle, listMode = false }: { level: BookmarkLevel; onToggle: () => void; listMode?: boolean }) {
-  const Icon = level === 0 ? BookmarkBorderIcon : level === 1 ? BookmarkIcon : StarIcon;
-  const hint = listMode && level === 2 ? "★★ Level 2 · click for level 1" : BM_HINT[level];
+function BmBtn({
+  level,
+  onToggle,
+  listMode = false,
+}: {
+  level: BookmarkLevel;
+  onToggle: () => void;
+  listMode?: boolean;
+}) {
+  const Icon =
+    level === 0 ? BookmarkBorderIcon : level === 1 ? BookmarkIcon : StarIcon;
+  const hint =
+    listMode && level === 2 ? "★★ Level 2 · click for level 1" : BM_HINT[level];
   return (
     <Tooltip title={hint}>
-      <IconButton size="small" onClick={onToggle} sx={{ color: BM_COLOR[level] }}>
+      <IconButton
+        size="small"
+        onClick={onToggle}
+        sx={{ color: BM_COLOR[level] }}
+      >
         <Icon fontSize="small" />
       </IconButton>
     </Tooltip>
@@ -183,10 +209,16 @@ function LandingScreen({
   return (
     <Box className="min-h-screen flex flex-col items-center justify-center p-4 gap-4">
       <Box className="mb-2 text-center">
-        <Typography variant="h4" sx={{ color: "var(--accent)", letterSpacing: 2, fontWeight: 700 }}>
+        <Typography
+          variant="h4"
+          sx={{ color: "var(--accent)", letterSpacing: 2, fontWeight: 700 }}
+        >
           敬語練習
         </Typography>
-        <Typography variant="body2" sx={{ color: "var(--text-muted)", mt: 0.5 }}>
+        <Typography
+          variant="body2"
+          sx={{ color: "var(--text-muted)", mt: 0.5 }}
+        >
           Keigo Practice
         </Typography>
       </Box>
@@ -194,10 +226,16 @@ function LandingScreen({
       {/* Count selector */}
       <Card sx={{ ...cardBase, maxWidth: 560 }}>
         <CardContent sx={{ p: 4 }}>
-          <Typography variant="overline" sx={{ color: "var(--text-muted)", letterSpacing: 2 }}>
+          <Typography
+            variant="overline"
+            sx={{ color: "var(--text-muted)", letterSpacing: 2 }}
+          >
             Start Quiz
           </Typography>
-          <Typography variant="body2" sx={{ color: "var(--text-muted)", mt: 0.5, mb: 3 }}>
+          <Typography
+            variant="body2"
+            sx={{ color: "var(--text-muted)", mt: 0.5, mb: 3 }}
+          >
             Choose number of questions
           </Typography>
           <Box className="flex flex-wrap gap-3">
@@ -215,24 +253,57 @@ function LandingScreen({
         </CardContent>
       </Card>
 
+      {/* All questions link */}
+      <Card sx={{ ...cardBase, maxWidth: 560 }}>
+        <CardContent sx={{ p: 3, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <Box>
+            <Typography
+              variant="overline"
+              sx={{ color: "var(--text-muted)", letterSpacing: 2 }}
+            >
+              Question List
+            </Typography>
+            <Typography variant="body2" sx={{ color: "var(--text-muted)", mt: 0.5 }}>
+              Browse all {ALL.length} questions
+            </Typography>
+          </Box>
+          <Link href="/questions" style={{ textDecoration: "none" }}>
+            <Button variant="outlined" sx={outlineBtn}>
+              View All →
+            </Button>
+          </Link>
+        </CardContent>
+      </Card>
+
       {/* Bookmarks card */}
       <Card sx={{ ...cardBase, maxWidth: 560 }}>
         <CardContent sx={{ p: 4 }}>
           <Box className="flex items-start justify-between gap-3">
             <Box>
-              <Typography variant="overline" sx={{ color: "var(--text-muted)", letterSpacing: 2 }}>
+              <Typography
+                variant="overline"
+                sx={{ color: "var(--text-muted)", letterSpacing: 2 }}
+              >
                 Bookmarks
               </Typography>
               <Box className="flex items-center gap-3 mt-1">
                 <Box className="flex items-center gap-1">
                   <BookmarkIcon sx={{ color: "var(--accent)", fontSize: 16 }} />
-                  <Typography variant="body2" sx={{ color: "var(--text-muted)" }} suppressHydrationWarning>
+                  <Typography
+                    variant="body2"
+                    sx={{ color: "var(--text-muted)" }}
+                    suppressHydrationWarning
+                  >
                     {lv1Count}
                   </Typography>
                 </Box>
                 <Box className="flex items-center gap-1">
                   <StarIcon sx={{ color: "#e67e22", fontSize: 16 }} />
-                  <Typography variant="body2" sx={{ color: "var(--text-muted)" }} suppressHydrationWarning>
+                  <Typography
+                    variant="body2"
+                    sx={{ color: "var(--text-muted)" }}
+                    suppressHydrationWarning
+                  >
                     {lv2Count}
                   </Typography>
                 </Box>
@@ -249,8 +320,12 @@ function LandingScreen({
           </Box>
 
           {bmIdxs.length === 0 ? (
-            <Typography variant="body2" sx={{ color: "var(--text-muted)", mt: 2, fontStyle: "italic" }}>
-              No bookmarks yet. Add them during a quiz or from the results screen.
+            <Typography
+              variant="body2"
+              sx={{ color: "var(--text-muted)", mt: 2, fontStyle: "italic" }}
+            >
+              No bookmarks yet. Add them during a quiz or from the results
+              screen.
             </Typography>
           ) : (
             <>
@@ -258,7 +333,12 @@ function LandingScreen({
               <Button
                 size="small"
                 onClick={onViewBookmarks}
-                sx={{ color: "var(--accent)", textTransform: "none", p: 0, fontWeight: 600 }}
+                sx={{
+                  color: "var(--accent)",
+                  textTransform: "none",
+                  p: 0,
+                  fontWeight: 600,
+                }}
               >
                 View bookmark list →
               </Button>
@@ -297,7 +377,10 @@ function BookmarkListScreen({
 
   const totalPages = Math.max(1, Math.ceil(bmIdxs.length / PAGE_SIZE));
   const safePage = Math.min(page, totalPages - 1);
-  const pageItems = bmIdxs.slice(safePage * PAGE_SIZE, (safePage + 1) * PAGE_SIZE);
+  const pageItems = bmIdxs.slice(
+    safePage * PAGE_SIZE,
+    (safePage + 1) * PAGE_SIZE,
+  );
 
   return (
     <Box className="min-h-screen flex flex-col items-center p-4 pt-10">
@@ -305,12 +388,20 @@ function BookmarkListScreen({
         <Button
           size="small"
           onClick={onBack}
-          sx={{ color: "var(--text-muted)", textTransform: "none", mb: 2, p: 0 }}
+          sx={{
+            color: "var(--text-muted)",
+            textTransform: "none",
+            mb: 2,
+            p: 0,
+          }}
         >
           ← Back
         </Button>
         <Box className="flex items-baseline justify-between">
-          <Typography variant="h5" sx={{ color: "var(--accent)", fontWeight: 700 }}>
+          <Typography
+            variant="h5"
+            sx={{ color: "var(--accent)", fontWeight: 700 }}
+          >
             Bookmarks
           </Typography>
           <Typography variant="body2" sx={{ color: "var(--text-muted)" }}>
@@ -325,7 +416,10 @@ function BookmarkListScreen({
         </Typography>
       ) : (
         <>
-          <Box sx={{ width: "100%", maxWidth: 600 }} className="flex flex-col gap-3">
+          <Box
+            sx={{ width: "100%", maxWidth: 600 }}
+            className="flex flex-col gap-3"
+          >
             {pageItems.map((idx) => {
               const lv = (bookmarks[idx] ?? 0) as BookmarkLevel;
               const q = ALL[idx];
@@ -334,38 +428,64 @@ function BookmarkListScreen({
                   <CardContent sx={{ p: 3 }}>
                     <Box className="flex items-start justify-between gap-2">
                       <Box className="flex-1 min-w-0">
-                        <Typography sx={{ color: "var(--foreground)", fontWeight: 600, fontSize: "1rem" }}>
+                        <Typography
+                          sx={{
+                            color: "var(--foreground)",
+                            fontWeight: 600,
+                            fontSize: "1rem",
+                          }}
+                        >
                           {q.futsugo}
                         </Typography>
-                        <Typography variant="body2" sx={{ color: "var(--text-muted)", mb: 1.5 }}>
+                        <Typography
+                          variant="body2"
+                          sx={{ color: "var(--text-muted)", mb: 1.5 }}
+                        >
                           {q.zh}
                         </Typography>
-                        <Divider sx={{ borderColor: "var(--border)", mb: 1.5 }} />
+                        <Divider
+                          sx={{ borderColor: "var(--border)", mb: 1.5 }}
+                        />
                         <Box className="flex flex-col gap-2">
-                          {Array.from({ length: Math.ceil(q.keigo.length / 2) }, (_, i) => {
-                            const answer = q.keigo[i * 2];
-                            const reading = q.keigo[i * 2 + 1];
-                            return (
-                              <Box
-                                key={i}
-                                className="rounded-lg px-3 py-2"
-                                sx={{ background: "var(--accent-soft)", border: "1px solid var(--border)" }}
+                          {q.keigo.map((k, i) => (
+                            <Box
+                              key={i}
+                              className="rounded-lg px-3 py-2"
+                              sx={{
+                                background: "var(--accent-soft)",
+                                border: "1px solid var(--border)",
+                              }}
+                            >
+                              <Typography
+                                sx={{
+                                  color: "var(--foreground)",
+                                  fontSize: "0.95rem",
+                                  fontWeight: 500,
+                                }}
                               >
-                                <Typography sx={{ color: "var(--foreground)", fontSize: "0.95rem", fontWeight: 500 }}>
-                                  {answer}
+                                {k.written}
+                              </Typography>
+                              {k.read !== k.written && (
+                                <Typography
+                                  sx={{
+                                    color: "var(--text-muted)",
+                                    fontSize: "0.8rem",
+                                    mt: 0.5,
+                                  }}
+                                >
+                                  {k.read}
                                 </Typography>
-                                {reading && reading !== answer && (
-                                  <Typography sx={{ color: "var(--text-muted)", fontSize: "0.8rem", mt: 0.5 }}>
-                                    {reading}
-                                  </Typography>
-                                )}
-                              </Box>
-                            );
-                          })}
+                              )}
+                            </Box>
+                          ))}
                         </Box>
                       </Box>
                       <Box className="flex items-center">
-                        <BmBtn level={lv} onToggle={() => onToggleBookmark(idx)} listMode />
+                        <BmBtn
+                          level={lv}
+                          onToggle={() => onToggleBookmark(idx)}
+                          listMode
+                        />
                         <Tooltip title="Remove bookmark">
                           <IconButton
                             size="small"
@@ -411,19 +531,31 @@ function BookmarkListScreen({
       )}
 
       <Dialog open={deleteIdx !== null} onClose={() => setDeleteIdx(null)}>
-        <DialogTitle sx={{ color: "var(--foreground)" }}>Remove Bookmark</DialogTitle>
+        <DialogTitle sx={{ color: "var(--foreground)" }}>
+          Remove Bookmark
+        </DialogTitle>
         <DialogContent>
           <Typography sx={{ color: "var(--text-muted)" }}>
             Remove this bookmark?
           </Typography>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setDeleteIdx(null)} sx={{ color: "var(--text-muted)", textTransform: "none" }}>
+          <Button
+            onClick={() => setDeleteIdx(null)}
+            sx={{ color: "var(--text-muted)", textTransform: "none" }}
+          >
             Cancel
           </Button>
           <Button
-            onClick={() => { onDeleteBookmark(deleteIdx!); setDeleteIdx(null); }}
-            sx={{ color: "var(--error, #e74c3c)", textTransform: "none", fontWeight: 600 }}
+            onClick={() => {
+              onDeleteBookmark(deleteIdx!);
+              setDeleteIdx(null);
+            }}
+            sx={{
+              color: "var(--error, #e74c3c)",
+              textTransform: "none",
+              fontWeight: 600,
+            }}
           >
             Remove
           </Button>
@@ -457,12 +589,15 @@ function QuizScreen({
   const q = ALL[idx];
   const isLast = cursor === indices.length - 1;
   const bmLevel = (bookmarks[idx] ?? 0) as BookmarkLevel;
-  const progress = ((cursor + (answered !== null ? 1 : 0)) / indices.length) * 100;
+  const progress =
+    ((cursor + (answered !== null ? 1 : 0)) / indices.length) * 100;
 
   const handleSubmit = useCallback(() => {
     if (!input.trim() || answered !== null) return;
     const trimmed = normalize(input.trim());
-    const correct = q.keigo.some((k) => normalize(k) === trimmed);
+    const correct = q.keigo.some(
+      (k) => normalize(k.written) === trimmed || normalize(k.read) === trimmed,
+    );
     setAnswered(correct);
     recordsRef.current = [
       ...recordsRef.current,
@@ -505,10 +640,16 @@ function QuizScreen({
         >
           Quit ✕
         </Button>
-        <Typography variant="h4" sx={{ color: "var(--accent)", letterSpacing: 2, fontWeight: 700 }}>
+        <Typography
+          variant="h4"
+          sx={{ color: "var(--accent)", letterSpacing: 2, fontWeight: 700 }}
+        >
           敬語練習
         </Typography>
-        <Typography variant="body2" sx={{ color: "var(--text-muted)", mt: 0.5 }}>
+        <Typography
+          variant="body2"
+          sx={{ color: "var(--text-muted)", mt: 0.5 }}
+        >
           {cursor + 1} / {indices.length}
         </Typography>
         <Box sx={{ width: 200, mt: 1.5, mx: "auto" }}>
@@ -519,7 +660,10 @@ function QuizScreen({
               height: 5,
               borderRadius: 3,
               background: "var(--border)",
-              "& .MuiLinearProgress-bar": { background: "var(--accent)", borderRadius: 3 },
+              "& .MuiLinearProgress-bar": {
+                background: "var(--accent)",
+                borderRadius: 3,
+              },
             }}
           />
         </Box>
@@ -530,18 +674,29 @@ function QuizScreen({
           {/* Prompt */}
           <Box className="mb-6">
             <Box className="flex items-start justify-between">
-              <Typography variant="overline" sx={{ color: "var(--text-muted)", letterSpacing: 2 }}>
+              <Typography
+                variant="overline"
+                sx={{ color: "var(--text-muted)", letterSpacing: 2 }}
+              >
                 普通語 → 敬語に変えてください
               </Typography>
               <BmBtn level={bmLevel} onToggle={() => onToggleBookmark(idx)} />
             </Box>
             <Typography
               variant="h5"
-              sx={{ color: "var(--foreground)", mt: 1, lineHeight: 1.6, fontWeight: 600 }}
+              sx={{
+                color: "var(--foreground)",
+                mt: 1,
+                lineHeight: 1.6,
+                fontWeight: 600,
+              }}
             >
               {q.futsugo}
             </Typography>
-            <Typography variant="body1" sx={{ color: "var(--text-muted)", mt: 0.5 }}>
+            <Typography
+              variant="body1"
+              sx={{ color: "var(--text-muted)", mt: 0.5 }}
+            >
               {q.zh}
             </Typography>
           </Box>
@@ -574,7 +729,12 @@ function QuizScreen({
                 Submit
               </Button>
             ) : (
-              <Button fullWidth variant="outlined" onClick={handleNext} sx={outlineBtn}>
+              <Button
+                fullWidth
+                variant="outlined"
+                onClick={handleNext}
+                sx={outlineBtn}
+              >
                 {isLast ? "See Results →" : "Next →"}
               </Button>
             )}
@@ -591,12 +751,17 @@ function QuizScreen({
             >
               <Box className="flex items-center gap-2 mb-3">
                 {answered ? (
-                  <CheckCircleIcon sx={{ color: "var(--success)", fontSize: 22 }} />
+                  <CheckCircleIcon
+                    sx={{ color: "var(--success)", fontSize: 22 }}
+                  />
                 ) : (
                   <CancelIcon sx={{ color: "var(--error)", fontSize: 22 }} />
                 )}
                 <Typography
-                  sx={{ color: answered ? "var(--success)" : "var(--error)", fontWeight: 700 }}
+                  sx={{
+                    color: answered ? "var(--success)" : "var(--error)",
+                    fontWeight: 700,
+                  }}
                 >
                   {answered ? "正解！Correct!" : "不正解 Incorrect"}
                 </Typography>
@@ -606,7 +771,11 @@ function QuizScreen({
                 <Box className="mb-3">
                   <Typography
                     variant="caption"
-                    sx={{ color: "var(--text-muted)", display: "block", mb: 0.5 }}
+                    sx={{
+                      color: "var(--text-muted)",
+                      display: "block",
+                      mb: 0.5,
+                    }}
                   >
                     Your answer:
                   </Typography>
@@ -633,16 +802,31 @@ function QuizScreen({
               </Typography>
               <Box
                 className="rounded-lg px-3 py-2"
-                sx={{ background: "var(--accent-soft)", border: "1px solid var(--border)" }}
+                sx={{
+                  background: "var(--accent-soft)",
+                  border: "1px solid var(--border)",
+                }}
               >
-                <Typography sx={{ color: "var(--foreground)", fontSize: "0.95rem" }}>
-                  {q.keigo[0]}
-                </Typography>
-                {q.keigo[1] && q.keigo[1] !== q.keigo[0] && (
-                  <Typography sx={{ color: "var(--text-muted)", fontSize: "0.8rem", mt: 0.5 }}>
-                    {q.keigo[1]}
-                  </Typography>
-                )}
+                {q.keigo.map((k, i) => (
+                  <Box key={i} sx={{ mb: i < q.keigo.length - 1 ? 1 : 0 }}>
+                    <Typography
+                      sx={{ color: "var(--foreground)", fontSize: "0.95rem" }}
+                    >
+                      {k.written}
+                    </Typography>
+                    {k.read !== k.written && (
+                      <Typography
+                        sx={{
+                          color: "var(--text-muted)",
+                          fontSize: "0.8rem",
+                          mt: 0.5,
+                        }}
+                      >
+                        {k.read}
+                      </Typography>
+                    )}
+                  </Box>
+                ))}
               </Box>
             </Box>
           )}
@@ -683,7 +867,10 @@ function ResultsScreen({
         >
           Results
         </Typography>
-        <Typography variant="h2" sx={{ color: "var(--foreground)", fontWeight: 800, mt: 1 }}>
+        <Typography
+          variant="h2"
+          sx={{ color: "var(--foreground)", fontWeight: 800, mt: 1 }}
+        >
           {correctCount} / {records.length}
         </Typography>
         <Typography variant="body1" sx={{ color: "var(--text-muted)" }}>
@@ -692,15 +879,26 @@ function ResultsScreen({
       </Box>
 
       <Box className="flex gap-3 mb-8">
-        <Button variant="outlined" onClick={onHome} sx={{ ...outlineBtn, py: 1 }}>
+        <Button
+          variant="outlined"
+          onClick={onHome}
+          sx={{ ...outlineBtn, py: 1 }}
+        >
           ← Menu
         </Button>
-        <Button variant="contained" onClick={onRetry} sx={{ ...primaryBtn, py: 1 }}>
+        <Button
+          variant="contained"
+          onClick={onRetry}
+          sx={{ ...primaryBtn, py: 1 }}
+        >
           Try Again
         </Button>
       </Box>
 
-      <Box sx={{ width: "100%", maxWidth: 600 }} className="flex flex-col gap-3 pb-12">
+      <Box
+        sx={{ width: "100%", maxWidth: 600 }}
+        className="flex flex-col gap-3 pb-12"
+      >
         {records.map((rec, i) => {
           const lv = (bookmarks[rec.index] ?? 0) as BookmarkLevel;
           return (
@@ -715,18 +913,33 @@ function ResultsScreen({
                 <Box className="flex items-start gap-2">
                   {rec.correct ? (
                     <CheckCircleIcon
-                      sx={{ color: "var(--success)", fontSize: 20, mt: 0.3, flexShrink: 0 }}
+                      sx={{
+                        color: "var(--success)",
+                        fontSize: 20,
+                        mt: 0.3,
+                        flexShrink: 0,
+                      }}
                     />
                   ) : (
                     <CancelIcon
-                      sx={{ color: "var(--error)", fontSize: 20, mt: 0.3, flexShrink: 0 }}
+                      sx={{
+                        color: "var(--error)",
+                        fontSize: 20,
+                        mt: 0.3,
+                        flexShrink: 0,
+                      }}
                     />
                   )}
                   <Box className="flex-1 min-w-0">
-                    <Typography sx={{ color: "var(--foreground)", fontWeight: 600 }}>
+                    <Typography
+                      sx={{ color: "var(--foreground)", fontWeight: 600 }}
+                    >
                       {rec.question.futsugo}
                     </Typography>
-                    <Typography variant="body2" sx={{ color: "var(--text-muted)", mb: 1 }}>
+                    <Typography
+                      variant="body2"
+                      sx={{ color: "var(--text-muted)", mb: 1 }}
+                    >
                       {rec.question.zh}
                     </Typography>
 
@@ -758,21 +971,26 @@ function ResultsScreen({
                       </Typography>
                       <Typography
                         component="span"
-                        sx={{ color: "var(--success)", fontSize: "0.9rem", fontWeight: 500 }}
+                        sx={{
+                          color: "var(--success)",
+                          fontSize: "0.9rem",
+                          fontWeight: 500,
+                        }}
                       >
-                        {rec.question.keigo[0]}
+                        {rec.question.keigo.map((k, i) => (
+                          <span key={i}>
+                            {k.written}
+                            {k.read !== k.written && ` (${k.read})`}
+                            {i < rec.question.keigo.length - 1 ? ", " : ""}
+                          </span>
+                        ))}
                       </Typography>
-                      {rec.question.keigo[1] && rec.question.keigo[1] !== rec.question.keigo[0] && (
-                        <Typography
-                          variant="caption"
-                          sx={{ color: "var(--text-muted)", display: "block" }}
-                        >
-                          {rec.question.keigo[1]}
-                        </Typography>
-                      )}
                     </Box>
                   </Box>
-                  <BmBtn level={lv} onToggle={() => onToggleBookmark(rec.index)} />
+                  <BmBtn
+                    level={lv}
+                    onToggle={() => onToggleBookmark(rec.index)}
+                  />
                 </Box>
               </CardContent>
             </Card>
@@ -789,34 +1007,41 @@ export default function KeigoQuiz() {
   const [screen, setScreen] = useState<Screen>("landing");
   const [indices, setIndices] = useState<number[]>([]);
   const [records, setRecords] = useState<QuizRecord[]>([]);
-  const [bookmarks, setBookmarks] = useState<BookmarkMap>(() => loadBookmarks());
-  const [bookmarkOrder, setBookmarkOrder] = useState<BookmarkOrderMap>(() => loadBookmarkOrder());
+  const [bookmarks, setBookmarks] = useState<BookmarkMap>(() =>
+    loadBookmarks(),
+  );
+  const [bookmarkOrder, setBookmarkOrder] = useState<BookmarkOrderMap>(() =>
+    loadBookmarkOrder(),
+  );
 
-  const toggleBookmark = useCallback((idx: number) => {
-    const lv = (bookmarks[idx] ?? 0) as BookmarkLevel;
-    const next = ((lv + 1) % 3) as BookmarkLevel;
-    if (lv === 0) {
-      setBookmarkOrder((prev) => {
-        const updated = { ...prev, [idx]: Date.now() };
-        saveBookmarkOrder(updated);
-        return updated;
-      });
-    } else if (next === 0) {
-      setBookmarkOrder((prev) => {
+  const toggleBookmark = useCallback(
+    (idx: number) => {
+      const lv = (bookmarks[idx] ?? 0) as BookmarkLevel;
+      const next = ((lv + 1) % 3) as BookmarkLevel;
+      if (lv === 0) {
+        setBookmarkOrder((prev) => {
+          const updated = { ...prev, [idx]: Date.now() };
+          saveBookmarkOrder(updated);
+          return updated;
+        });
+      } else if (next === 0) {
+        setBookmarkOrder((prev) => {
+          const updated = { ...prev };
+          delete updated[idx];
+          saveBookmarkOrder(updated);
+          return updated;
+        });
+      }
+      setBookmarks((prev) => {
         const updated = { ...prev };
-        delete updated[idx];
-        saveBookmarkOrder(updated);
+        if (next === 0) delete updated[idx];
+        else updated[idx] = next;
+        saveBookmarks(updated);
         return updated;
       });
-    }
-    setBookmarks((prev) => {
-      const updated = { ...prev };
-      if (next === 0) delete updated[idx];
-      else updated[idx] = next;
-      saveBookmarks(updated);
-      return updated;
-    });
-  }, [bookmarks]);
+    },
+    [bookmarks],
+  );
 
   const toggleBookmarkLevel = useCallback((idx: number) => {
     setBookmarks((prev) => {
