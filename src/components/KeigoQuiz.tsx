@@ -205,6 +205,7 @@ function LandingScreen({
 
   const lv1Count = bmIdxs.filter((i) => bookmarks[i] === 1).length;
   const lv2Count = bmIdxs.filter((i) => bookmarks[i] === 2).length;
+  const lv2Idxs = bmIdxs.filter((i) => bookmarks[i] === 2);
 
   return (
     <Box className="min-h-screen flex flex-col items-center justify-center p-4 gap-4">
@@ -319,14 +320,24 @@ function LandingScreen({
                 </Box>
               </Box>
             </Box>
-            <Button
-              variant="outlined"
-              disabled={bmIdxs.length === 0}
-              onClick={() => onStart(sampleN(bmIdxs, bmIdxs.length))}
-              sx={outlineBtn}
-            >
-              Practice Bookmarks
-            </Button>
+            <Box className="flex flex-col gap-2 items-end">
+              <Button
+                variant="outlined"
+                disabled={bmIdxs.length === 0}
+                onClick={() => onStart(sampleN(bmIdxs, bmIdxs.length))}
+                sx={outlineBtn}
+              >
+                Practice Bookmarks
+              </Button>
+              <Button
+                variant="contained"
+                disabled={lv2Idxs.length === 0}
+                onClick={() => onStart(sampleN(lv2Idxs, lv2Idxs.length))}
+                sx={{ ...primaryBtn, fontSize: "0.875rem", py: 1 }}
+              >
+                ★ Practice Highlights
+              </Button>
+            </Box>
           </Box>
 
           {bmIdxs.length === 0 ? (
