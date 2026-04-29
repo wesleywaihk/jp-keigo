@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import Link from "next/link";
 import {
   Box,
@@ -635,11 +635,19 @@ function QuizScreen({
     setAnswered(false);
   }, [answered, idx, q]);
 
+  useEffect(() => {
+    if (answered === null) return;
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "Enter" && !e.shiftKey) handleNext();
+    };
+    document.addEventListener("keydown", handler);
+    return () => document.removeEventListener("keydown", handler);
+  }, [answered, handleNext]);
+
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key !== "Enter" || e.shiftKey) return;
     e.preventDefault();
     if (answered === null) handleSubmit();
-    else handleNext();
   };
 
   return (
