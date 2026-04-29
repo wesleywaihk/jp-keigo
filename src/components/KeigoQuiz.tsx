@@ -632,14 +632,8 @@ function QuizScreen({
       ...recordsRef.current,
       { index: idx, question: q, userInput: "", correct: false },
     ];
-    if (isLast) {
-      onFinish(recordsRef.current);
-      return;
-    }
-    setCursor((c) => c + 1);
-    setInput("");
-    setAnswered(null);
-  }, [answered, idx, isLast, onFinish, q]);
+    setAnswered(false);
+  }, [answered, idx, q]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key !== "Enter" || e.shiftKey) return;
