@@ -255,7 +255,14 @@ function LandingScreen({
 
       {/* All questions link */}
       <Card sx={{ ...cardBase, maxWidth: 560 }}>
-        <CardContent sx={{ p: 3, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <CardContent
+          sx={{
+            p: 3,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+          }}
+        >
           <Box>
             <Typography
               variant="overline"
@@ -263,7 +270,10 @@ function LandingScreen({
             >
               Question List
             </Typography>
-            <Typography variant="body2" sx={{ color: "var(--text-muted)", mt: 0.5 }}>
+            <Typography
+              variant="body2"
+              sx={{ color: "var(--text-muted)", mt: 0.5 }}
+            >
               Browse all {ALL.length} questions
             </Typography>
           </Box>
@@ -616,6 +626,21 @@ function QuizScreen({
     setAnswered(null);
   }, [answered, isLast, onFinish]);
 
+  const handleSkip = useCallback(() => {
+    if (answered !== null) return;
+    recordsRef.current = [
+      ...recordsRef.current,
+      { index: idx, question: q, userInput: "", correct: false },
+    ];
+    if (isLast) {
+      onFinish(recordsRef.current);
+      return;
+    }
+    setCursor((c) => c + 1);
+    setInput("");
+    setAnswered(null);
+  }, [answered, idx, isLast, onFinish, q]);
+
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key !== "Enter" || e.shiftKey) return;
     e.preventDefault();
@@ -625,14 +650,11 @@ function QuizScreen({
 
   return (
     <Box className="min-h-screen flex flex-col items-center justify-center p-4">
-      <Box className="mb-8 text-center" sx={{ position: "relative" }}>
+      <Box sx={{ position: "fixed", top: 16, right: 16, zIndex: 1000 }}>
         <Button
           size="small"
           onClick={onQuit}
           sx={{
-            position: "absolute",
-            right: 0,
-            top: 0,
             color: "var(--text-muted)",
             textTransform: "none",
             fontSize: "0.85rem",
@@ -640,6 +662,8 @@ function QuizScreen({
         >
           Quit ✕
         </Button>
+      </Box>
+      <Box className="mb-8 text-center">
         <Typography
           variant="h4"
           sx={{ color: "var(--accent)", letterSpacing: 2, fontWeight: 700 }}
@@ -717,17 +741,34 @@ function QuizScreen({
           />
 
           {/* Action button */}
-          <Box className="mt-4">
+          <Box
+            className="mt-4"
+            sx={{
+              display: "flex",
+              flexDirection: { xs: "column", sm: "row" },
+              gap: 2,
+            }}
+          >
             {answered === null ? (
-              <Button
-                fullWidth
-                variant="contained"
-                onClick={handleSubmit}
-                disabled={!input.trim()}
-                sx={primaryBtn}
-              >
-                Submit
-              </Button>
+              <>
+                <Button
+                  fullWidth
+                  variant="outlined"
+                  onClick={handleSkip}
+                  sx={{ ...outlineBtn, flex: 1 }}
+                >
+                  Skip
+                </Button>
+                <Button
+                  fullWidth
+                  variant="contained"
+                  onClick={handleSubmit}
+                  disabled={!input.trim()}
+                  sx={{ ...primaryBtn, flex: 2 }}
+                >
+                  Submit
+                </Button>
+              </>
             ) : (
               <Button
                 fullWidth
