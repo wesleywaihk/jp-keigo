@@ -710,15 +710,12 @@ function QuizScreen({
         <CardContent sx={{ p: 4 }}>
           {/* Prompt */}
           <Box className="mb-6">
-            <Box className="flex items-start justify-between">
-              <Typography
-                variant="overline"
-                sx={{ color: "var(--text-muted)", letterSpacing: 2 }}
-              >
-                普通語 → 敬語に変えてください
-              </Typography>
-              <BmBtn level={bmLevel} onToggle={() => onToggleBookmark(idx)} />
-            </Box>
+            <Typography
+              variant="overline"
+              sx={{ color: "var(--text-muted)", letterSpacing: 2 }}
+            >
+              普通語 → 敬語に変えてください
+            </Typography>
             <Typography
               variant="h5"
               sx={{
@@ -803,22 +800,25 @@ function QuizScreen({
                 border: `1px solid ${answered ? "var(--success)" : "var(--error)"}`,
               }}
             >
-              <Box className="flex items-center gap-2 mb-3">
-                {answered ? (
-                  <CheckCircleIcon
-                    sx={{ color: "var(--success)", fontSize: 22 }}
-                  />
-                ) : (
-                  <CancelIcon sx={{ color: "var(--error)", fontSize: 22 }} />
-                )}
-                <Typography
-                  sx={{
-                    color: answered ? "var(--success)" : "var(--error)",
-                    fontWeight: 700,
-                  }}
-                >
-                  {answered ? "正解！Correct!" : "不正解 Incorrect"}
-                </Typography>
+              <Box className="flex items-center justify-between mb-3">
+                <Box className="flex items-center gap-2">
+                  {answered ? (
+                    <CheckCircleIcon
+                      sx={{ color: "var(--success)", fontSize: 22 }}
+                    />
+                  ) : (
+                    <CancelIcon sx={{ color: "var(--error)", fontSize: 22 }} />
+                  )}
+                  <Typography
+                    sx={{
+                      color: answered ? "var(--success)" : "var(--error)",
+                      fontWeight: 700,
+                    }}
+                  >
+                    {answered ? "正解！Correct!" : "不正解 Incorrect"}
+                  </Typography>
+                </Box>
+                <BmBtn level={bmLevel} onToggle={() => onToggleBookmark(idx)} />
               </Box>
 
               {!answered && (
