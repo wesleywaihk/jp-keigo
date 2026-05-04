@@ -665,7 +665,9 @@ function QuizScreen({
     setPracticeInput("");
   }, [practiceInput, q]);
 
-  const practiceRef = useRef<HTMLInputElement | HTMLTextAreaElement | null>(null);
+  const practiceRef = useRef<HTMLInputElement | HTMLTextAreaElement | null>(
+    null,
+  );
 
   useEffect(() => {
     if (answered === null) return;
@@ -972,7 +974,11 @@ function QuizScreen({
                       {practiceAttempt && (
                         <Typography
                           variant="caption"
-                          sx={{ color: "var(--text-muted)", mt: 0.5, display: "block" }}
+                          sx={{
+                            color: "var(--text-muted)",
+                            mt: 0.5,
+                            display: "block",
+                          }}
                         >
                           Your answer: {practiceAttempt}
                         </Typography>
