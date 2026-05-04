@@ -604,6 +604,10 @@ function QuizScreen({
   const [cursor, setCursor] = useState(0);
   const [input, setInput] = useState("");
   const [answered, setAnswered] = useState<boolean | null>(null);
+  const [practiceInput, setPracticeInput] = useState("");
+  const [practiceFeedback, setPracticeFeedback] = useState<
+    "good" | "retry" | null
+  >(null);
   const recordsRef = useRef<QuizRecord[]>([]);
 
   const idx = indices[cursor];
@@ -634,6 +638,8 @@ function QuizScreen({
     }
     setCursor((c) => c + 1);
     setInput("");
+    setPracticeInput("");
+    setPracticeFeedback(null);
     setAnswered(null);
   }, [answered, isLast, onFinish]);
 
@@ -645,6 +651,16 @@ function QuizScreen({
     ];
     setAnswered(false);
   }, [answered, idx, q]);
+
+  const handlePractice = useCallback(() => {
+    if (!practiceInput.trim()) return;
+    const trimmed = normalize(practiceInput.trim());
+    const correctPractice = q.keigo.some(
+      (k) => normalize(k.written) === trimmed || normalize(k.read) === trimmed,
+    );
+    setPracticeFeedback(correctPractice ? "good" : "retry");
+    setPracticeInput("");
+  }, [practiceInput, q]);
 
   useEffect(() => {
     if (answered === null) return;
@@ -881,6 +897,63 @@ function QuizScreen({
                     )}
                   </Box>
                 ))}
+              </Box>
+
+              <Box
+                className="mt-5 rounded-xl p-4"
+                sx={{
+                  background: "var(--surface)",
+                  border: "1px solid var(--border)",
+                }}
+              >
+                <Typography
+                  variant="subtitle2"
+                  sx={{ color: "var(--accent)", fontWeight: 700, mb: 2 }}
+                >
+                  Practice
+                </Typography>
+                <Box className="flex flex-col gap-3">
+                  <TextField
+                    fullWidth
+                    value={practiceInput}
+                    onChange={(e) => setPracticeInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && !e.shiftKey) {
+                        e.preventDefault();
+                        handlePractice();
+                      }
+                    }}
+                    placeholder="もう一度練習してみよう..."
+                    variant="outlined"
+                    slotProps={{ htmlInput: { lang: "ja" } }}
+                    sx={inputSx}
+                  />
+                  <Box className="flex items-center justify-end gap-3">
+                    <Button
+                      variant="contained"
+                      onClick={handlePractice}
+                      disabled={!practiceInput.trim()}
+                      sx={{ ...primaryBtn, minWidth: 120 }}
+                    >
+                      Enter
+                    </Button>
+                  </Box>
+                  {practiceFeedback && (
+                    <Typography
+                      sx={{
+                        color:
+                          practiceFeedback === "good"
+                            ? "var(--success)"
+                            : "var(--error)",
+                        fontSize: "0.95rem",
+                      }}
+                    >
+                      {practiceFeedback === "good"
+                        ? "よくできました。"
+                        : "間違いです。もう一度お試しください。"}
+                    </Typography>
+                  )}
+                </Box>
               </Box>
             </Box>
           )}
