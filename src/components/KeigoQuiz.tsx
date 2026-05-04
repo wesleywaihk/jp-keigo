@@ -605,6 +605,7 @@ function QuizScreen({
   const [input, setInput] = useState("");
   const [answered, setAnswered] = useState<boolean | null>(null);
   const [practiceInput, setPracticeInput] = useState("");
+  const [practiceAttempt, setPracticeAttempt] = useState("");
   const [practiceFeedback, setPracticeFeedback] = useState<
     "good" | "retry" | null
   >(null);
@@ -653,23 +654,37 @@ function QuizScreen({
   }, [answered, idx, q]);
 
   const handlePractice = useCallback(() => {
-    if (!practiceInput.trim()) return;
-    const trimmed = normalize(practiceInput.trim());
+    const attempt = practiceInput.trim();
+    if (!attempt) return;
+    const trimmed = normalize(attempt);
     const correctPractice = q.keigo.some(
       (k) => normalize(k.written) === trimmed || normalize(k.read) === trimmed,
     );
     setPracticeFeedback(correctPractice ? "good" : "retry");
+    setPracticeAttempt(attempt);
     setPracticeInput("");
   }, [practiceInput, q]);
+
+  const practiceRef = useRef<HTMLInputElement | HTMLTextAreaElement | null>(null);
 
   useEffect(() => {
     if (answered === null) return;
     const handler = (e: KeyboardEvent) => {
-      if (e.key === "Enter" && !e.shiftKey) handleNext();
+      if (e.key === "ArrowLeft") {
+        e.preventDefault();
+        handleNext();
+        return;
+      }
+      if (e.key === "Enter" && !e.shiftKey) {
+        if (document.activeElement === practiceRef.current) {
+          e.preventDefault();
+          if (practiceInput.trim()) handlePractice();
+        }
+      }
     };
     document.addEventListener("keydown", handler);
     return () => document.removeEventListener("keydown", handler);
-  }, [answered, handleNext]);
+  }, [answered, handleNext, handlePractice, practiceInput]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key !== "Enter" || e.shiftKey) return;
@@ -916,6 +931,7 @@ function QuizScreen({
                   <TextField
                     fullWidth
                     value={practiceInput}
+                    inputRef={practiceRef}
                     onChange={(e) => setPracticeInput(e.target.value)}
                     onKeyDown={(e) => {
                       if (e.key === "Enter" && !e.shiftKey) {
@@ -939,19 +955,29 @@ function QuizScreen({
                     </Button>
                   </Box>
                   {practiceFeedback && (
-                    <Typography
-                      sx={{
-                        color:
-                          practiceFeedback === "good"
-                            ? "var(--success)"
-                            : "var(--error)",
-                        fontSize: "0.95rem",
-                      }}
-                    >
-                      {practiceFeedback === "good"
-                        ? "よくできました。"
-                        : "間違いです。もう一度お試しください。"}
-                    </Typography>
+                    <Box>
+                      <Typography
+                        sx={{
+                          color:
+                            practiceFeedback === "good"
+                              ? "var(--success)"
+                              : "var(--error)",
+                          fontSize: "0.95rem",
+                        }}
+                      >
+                        {practiceFeedback === "good"
+                          ? "よくできました。"
+                          : "間違いです。もう一度お試しください。"}
+                      </Typography>
+                      {practiceAttempt && (
+                        <Typography
+                          variant="caption"
+                          sx={{ color: "var(--text-muted)", mt: 0.5, display: "block" }}
+                        >
+                          Your answer: {practiceAttempt}
+                        </Typography>
+                      )}
+                    </Box>
                   )}
                 </Box>
               </Box>
@@ -961,7 +987,7 @@ function QuizScreen({
       </Card>
 
       <Typography variant="caption" sx={{ color: "var(--text-muted)", mt: 4 }}>
-        Press Enter to submit · Enter again for next
+        Press Enter to submit practice · Press ← for next
       </Typography>
     </Box>
   );
